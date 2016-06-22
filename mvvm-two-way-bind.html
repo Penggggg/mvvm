@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+</head>
+
+<body>
+
+    <div id="app">
+        <h1>作用域A</h1>
+        <input type="text" two-way-bind="test">
+        <h1 bind="test"></h1>
+    </div><hr />
+
+    <div id="apple">
+        <h1>作用域B</h1>
+        <input type="text" two-way-bind="test">
+        <h1 bind="test"></h1>
+    </div><hr />
+
+    <script type="text/javascript">
+        var directive_bind = ['bind', 'two-way-bind'];
+        var DOM = 'DOM'
+        var TWOWAY = 'TWOWAY'
+        var vm = new mvvm('app');
+        var vm2 = new mvvm('apple')
+
+        function mvvm(rootEle) {
+            this.scope = rootEle
+            observe(this)
+            fineScope(this)
+        }
+
+        function observe(vm) {
+            Object.observe(vm, function(changes) {
+                changes.forEach(function(change, i) {
+                    switch (change.type) {
+                        case 'add':
+                            fineScope(vm)
+                            break;
+                        case 'delete':
+                            fineScope(vm);
+                            break;
+                        case 'update':
+                            fineScope(vm);
+                            break;
+                        default:
+                            break;
+                    }
+                })
+            })
+        }
+
+        function updateView(ele, value, type) {
+            if (type === DOM) {
+                if (value) {
+                    ele.innerHTML = value
+                } else {
+                    ele.innerHTML = ''
+                }
+
+            } else if (type == TWOWAY) {
+                if (value) {
+                    ele.value = value
+                } else {
+                    ele.value = ''
+                }
+            }
+        }
+
+        function fineScope(vm) {
+            var vmRootEle = document.getElementById(vm.scope)
+            findChild(vmRootEle, vm)
+        }
+
+        function findChild(ele, vm) {
+            // 查找所有自定义属性：bind、two-way-bind
+            for (var i = 0; i < directive_bind.length; i++) {
+                if (ele.getAttribute(directive_bind[i]) && directive_bind[i] === 'bind') {
+                    updateView(ele, vm[ele.getAttribute('bind')], DOM)
+                } else if (ele.getAttribute(directive_bind[i]) && directive_bind[i] === 'two-way-bind') {
+                    var  attr = ele.getAttribute('two-way-bind')
+                    updateView(ele, vm[attr], TWOWAY)
+                    twoWayBind(ele, attr, vm)
+                }
+            }
+            if (ele.hasChildNodes()) {
+                var sonNodes = ele.childNodes;
+                for (var j = 0; j < sonNodes.length; j++) {
+                    if (sonNodes[j].nodeType === 1) {
+                        findChild(sonNodes[j], vm)
+                    }
+                }
+            }
+        }
+        function twoWayBind(ele, prop, vm) {
+            ele.oninput = function() {
+              vm[prop] = ele.value
+            }
+        }
+    </script>
+</body>
+
+</html>
